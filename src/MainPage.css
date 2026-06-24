@@ -1,0 +1,13 @@
+.button {
+  border: 1px solid green;
+}
+
+.btn-group .button:not(:last-child) {
+  border-right: none;
+}
+.paper{
+     border: 1px solid green;
+}
+.btn-group .paper:not(:last-child) {
+  border-right: none;
+}
