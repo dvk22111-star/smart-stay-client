@@ -1,4 +1,4 @@
-import { list_offers, Offer, get_vacation_info, VacationInfo } from '../Service/server/home'
+import { Offer, get_vacation_info, VacationInfo, getVacations } from '../Service/server/home'
 import React, { useState, useEffect } from 'react'
 import {
   Typography,
@@ -27,20 +27,20 @@ import {
   TableRow,
   Alert,
 } from '@mui/material'
-
-const brochurePdfUrl = '/brochure.pdf'
-import LoginIcon from '@mui/icons-material/Login'
-import InfoIcon from '@mui/icons-material/Info'
-import LocalOfferIcon from '@mui/icons-material/LocalOffer'
-import LogoutIcon from '@mui/icons-material/Logout'
-import ContentCopyIcon from '@mui/icons-material/ContentCopy'
-import HelpOutlineIcon from '@mui/icons-material/HelpOutline'
-import CloseIcon from '@mui/icons-material/Close'
+import { Vacation } from "../Models/vacations";
+import LoginIcon from '@mui/icons-material/LoginRounded'
+import InfoIcon from '@mui/icons-material/InfoRounded'
+import LocalOfferIcon from '@mui/icons-material/LocalOfferRounded'
+import LogoutIcon from '@mui/icons-material/LogoutRounded'
+import ContentCopyIcon from '@mui/icons-material/ContentCopyRounded'
+import HelpOutlineIcon from '@mui/icons-material/HelpOutlineRounded'
+import CloseIcon from '@mui/icons-material/CloseRounded'
 import { ThemeProvider } from '@mui/material/styles'
 import { theme } from '../Style/mainS'
 import { isValidEmail, normalizeEmail } from './validation'
-// Brizza component not used in this file
 
+const brochurePdfUrl = '/brochure.pdf'
+// Brizza component not used in this file
 const navButtonSx = {
   mr: 1,
   bgcolor: 'primary.main',
@@ -325,61 +325,11 @@ const InfoFlow: React.FC = () => {
     </Paper>
   )
 }
-const MOCK_OFFERS: Offer[] = [
-  {
-    id: 'mock-1',
-    title: 'חבילת חוף דוגמא',
-    location: 'מלון אל מול הים',
-    date: '21/07/2026 - 27/07/2026',
-    description: 'חופשה מרגיעה עם ארוחת בוקר ושימוש בחדר כושר ובריכה.',
-    price: 2699,
-    kashrut: 'כשר למהדרין',
-    image: '/assets/mock-vacation.jpg',
-    brochure: '/assets/תוכניה.pdf',
-  },
-  {
-    id: 'mock-2',
-    title: 'חבילת ספא דוגמא',
-    location: 'מלון ספא יוקרה',
-    date: '01/08/2026 - 05/08/2026',
-    description: 'חופשה מושלמת עם טיפולי ספא זוגיים וחוף פרטי.',
-    price: 3199,
-    kashrut: 'כשר',
-    image: '/assets/mock-vacation-2.jpg',
-    brochure: '/assets/blank.pdf',
-  },
-]
 
-const OffersFlow: React.FC<{ onRegisterOpen?: (offer: Offer) => void }> = ({ onRegisterOpen }) => {
-  const [offers, setOffers] = useState<Offer[] | null>(null)
-  const [loading, setLoading] = useState<boolean>(true)
-  const [error, setError] = useState<string | null>(null)
-  const [showMockWarning, setShowMockWarning] = useState<boolean>(false)
+const OffersFlow: React.FC<{ vacations: Vacation[]; onRegisterOpen?: (offer: Offer) => void }> = ({ vacations, onRegisterOpen }) => {
   const [openBrochureUrl, setOpenBrochureUrl] = useState<string | null>(null)
 
-  useEffect(() => {
-    let mounted = true
-    const load = async () => {
-      try {
-        const data = await list_offers()
-        if (!mounted) return
-        setOffers(data)
-      } catch (e) {
-        if (!mounted) return
-        setOffers(MOCK_OFFERS)
-        setShowMockWarning(true)
-      } finally {
-        if (!mounted) return
-        setLoading(false)
-      }
-    }
-    load()
-    return () => {
-      mounted = false
-    }
-  }, [])
-
-  const openBrochure = (offer: Offer) => {
+  const openBrochure = () => {
     const url = brochurePdfUrl
     setOpenBrochureUrl(url)
   }
@@ -388,43 +338,51 @@ const OffersFlow: React.FC<{ onRegisterOpen?: (offer: Offer) => void }> = ({ onR
     setOpenBrochureUrl(null)
   }
 
-  if (loading) return <div className="panel">טוען הצעות...</div>
-  if (error) return <div className="panel">{error}</div>
-  if (!offers || offers.length === 0) return <div className="panel">אין הצעות זמינות כרגע</div>
+  if (!vacations || vacations.length === 0) return (
+    <Box sx={{ textAlign: 'center', p: 2 }}>
+      <Typography color="text.secondary">אין נופשים זמינים כרגע</Typography>
+    </Box>
+  )
 
   return (
     <div>
-      {showMockWarning && (
-        <Typography sx={{ mb: 2, color: '#ffd54f' }}>
-          השרת לא זמין כרגע, מציג הצעות דוגמה.
-        </Typography>
-      )}
       <div className="offers-grid">
-        {offers.map((o) => (
-          <div className="w3-card-4 w3-dark-grey offer-card" key={o.id}>
-            <div className="w3-container w3-center">
-              <h3>{o.title}</h3>
-              {o.image && <img src={o.image} alt={o.title} />}
-              <p>הנופש יתקיים בתאריך: <strong>{o.date}</strong></p>
-              <p>הנופש יתקיים במלון: <strong>{o.location}</strong></p>
-              <p>כשרות: <strong>{o.kashrut || 'לא צוינה'}</strong></p>
-              <p>מחיר כרטיסיה: <strong>₪{o.price}</strong></p>
-              <div className="offer-actions">
-                <Button size="small" variant="contained" className="w3-button w3-green" onClick={() => openBrochure(o)}>
-                  לצפיה בתוכניה
-                </Button>
-                <Button size="small" variant="contained" className="w3-button w3-light-blue" onClick={() => onRegisterOpen && onRegisterOpen(o)}>
-                  לרישום לנופש
-                </Button>
+        {vacations.map((vacation) => {
+          const offer: Offer = {
+            id: String(vacation.VacationID),
+            title: vacation.Program,
+            location: `Hotel ${vacation.HotelID}`,
+            date: `${vacation.StartV} - ${vacation.EndV}`,
+            description: `נופש: ${vacation.Program}`,
+            price: vacation.BasicCost,
+          }
+
+          return (
+            <div className="w3-card-4 w3-dark-grey offer-card" key={offer.id}>
+              <div className="w3-container w3-center">
+                <h3>{offer.title}</h3>
+                <p>תאריכים: <strong>{offer.date}</strong></p>
+                <p>יעד: <strong>{offer.location}</strong></p>
+                <p>מספר חדרים: <strong>{vacation.NumberOfRooms}</strong></p>
+                <p>קומות: <strong>{vacation.NumberOfFloors}</strong></p>
+                <p>מחיר: <strong>₪{offer.price}</strong></p>
+                <div className="offer-actions">
+                  <Button size="small" variant="contained" className="w3-button w3-green" onClick={openBrochure}>
+                    לצפיה בתוכניה
+                  </Button>
+                  <Button size="small" variant="contained" className="w3-button w3-light-blue" onClick={() => onRegisterOpen && onRegisterOpen(offer)}>
+                    לרישום לנופש
+                  </Button>
+                </div>
               </div>
             </div>
-          </div>
-        ))}
+          )
+        })}
       </div>
       <Dialog open={Boolean(openBrochureUrl)} onClose={closeBrochure} fullWidth maxWidth="lg">
-        <DialogTitle sx={{ pr: 4 }}>
+        <DialogTitle sx={{ pr: 6, position: 'relative', textAlign: 'right' }}>
           תוכניה
-          <IconButton aria-label="close" onClick={closeBrochure} sx={{ position: 'absolute', right: 8, top: 8 }}>
+          <IconButton aria-label="close" onClick={closeBrochure} sx={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)' }}>
             <CloseIcon />
           </IconButton>
         </DialogTitle>
@@ -459,6 +417,9 @@ export default function MainPage(): React.ReactElement {
   const [showLogin, setShowLogin] = useState(false)
   const [showVacations, setShowVacations] = useState(false)
   const [showAbout, setShowAbout] = useState(false)
+  const [vacations, setVacations] = useState<Vacation[]>([])
+  const [vacationsLoading, setVacationsLoading] = useState<boolean>(true)
+  const [vacationsError, setVacationsError] = useState<string | null>(null)
   const [registerOffer, setRegisterOffer] = useState<Offer | null>(null)
   const [showRegisterDialog, setShowRegisterDialog] = useState(false)
   const [registerError, setRegisterError] = useState<string | null>(null)
@@ -477,6 +438,35 @@ export default function MainPage(): React.ReactElement {
   const [adminPage, setAdminPage] = useState<'welcome' | 'registrants' | 'placements' | 'delete'>('welcome')
   const [registrations, setRegistrations] = useState<Registrant[]>(MOCK_REGISTRATIONS)
   const [placements, setPlacements] = useState<Placement[]>(MOCK_PLACEMENTS)
+
+  useEffect(() => {
+    let mounted = true
+    const loadVacations = async () => {
+      try {
+        setVacationsLoading(true)
+        setVacationsError(null)
+        console.log('Loading vacations from server...')
+        const data = await getVacations()
+        console.log('Vacations response:', data)
+        if (!mounted) return
+        setVacations(data)
+        console.log('Vacations length after set:', data.length)
+      } catch (error: any) {
+        console.error('Failed to load vacations:', error)
+        if (!mounted) return
+        setVacationsError(error?.message || 'שגיאה בטעילת נופשים')
+        setVacations([])
+      } finally {
+        if (!mounted) return
+        setVacationsLoading(false)
+      }
+    }
+
+    loadVacations()
+    return () => {
+      mounted = false
+    }
+  }, [])
  
   async function handleRegister(name: string, email: string): Promise<void> {
     try {
@@ -788,7 +778,7 @@ export default function MainPage(): React.ReactElement {
           {activeFlow === 'sendItinerary' && <SendItineraryFlow user={user} onRequireEmail={(mail) => handleRequireEmail(mail)} />}
  
            {activeFlow === 'info' && <InfoFlow />}
-           {activeFlow === 'offers' && <OffersFlow />}
+           {activeFlow === 'offers' && <OffersFlow vacations={vacations} onRegisterOpen={(o) => handleOpenRegister(o)} />}
            {/* {activeFlow === 'groupOffers' && <GroupOffersFlow />}
   */}
            <div style={{ marginTop: 24, position: 'fixed', bottom: 12, left: 12, fontSize: 12, color: '#666', lineHeight: 1.2 }}>
@@ -802,9 +792,9 @@ export default function MainPage(): React.ReactElement {
 
       {/* Login Dialog */}
       <Dialog open={showLogin} onClose={() => setShowLogin(false)} fullWidth maxWidth="sm">
-        <DialogTitle sx={{ pr: 4 }}>
+        <DialogTitle sx={{ pr: 6, position: 'relative', textAlign: 'right' }}>
           כניסה / רישום
-          <IconButton aria-label="close" onClick={() => setShowLogin(false)} sx={{ position: 'absolute', right: 8, top: 8 }}>
+          <IconButton aria-label="close" onClick={() => setShowLogin(false)} sx={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)' }}>
             <CloseIcon />
           </IconButton>
         </DialogTitle>
@@ -818,14 +808,32 @@ export default function MainPage(): React.ReactElement {
 
       {/* Vacations Dialog */}
       <Dialog open={showVacations} onClose={() => setShowVacations(false)} fullWidth maxWidth="md">
-        <DialogTitle sx={{ pr: 4 }}>
+        <DialogTitle sx={{ pr: 6, position: 'relative', textAlign: 'right' }}>
           הנופשים שלנו
-          <IconButton aria-label="close" onClick={() => setShowVacations(false)} sx={{ position: 'absolute', right: 8, top: 8 }}>
+          <IconButton aria-label="close" onClick={() => setShowVacations(false)} sx={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)' }}>
             <CloseIcon />
           </IconButton>
         </DialogTitle>
         <DialogContent dividers>
-          <OffersFlow onRegisterOpen={(o) => handleOpenRegister(o)} />
+          <Box sx={{ mb: 3 }}>
+            <Typography variant="h6" gutterBottom>רשימת נופש מהשרת</Typography>
+            {vacationsLoading ? (
+              <Typography color="text.secondary">טוען נופשים מהשרת...</Typography>
+            ) : vacationsError ? (
+              <Typography color="error">שגיאה בטעינת נופשים: {vacationsError}</Typography>
+            ) : vacations.length > 0 ? (
+              vacations.map((v) => (
+                <Paper key={v.VacationID} sx={{ p: 1.5, mb: 1.5 }}>
+                  <Typography fontWeight={700}>{v.Program}</Typography>
+                  <Typography variant="body2">{v.StartV} - {v.EndV}</Typography>
+                  <Typography variant="body2">₪{v.BasicCost}</Typography>
+                </Paper>
+              ))
+            ) : (
+              <Typography color="text.secondary">אין נתוני נופש זמינים כרגע.</Typography>
+            )}
+          </Box>
+          <OffersFlow vacations={vacations} onRegisterOpen={(o) => handleOpenRegister(o)} />
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setShowVacations(false)}>סגור</Button>
@@ -834,9 +842,9 @@ export default function MainPage(): React.ReactElement {
 
       {/* About Dialog */}
       <Dialog open={showAbout} onClose={() => setShowAbout(false)} fullWidth maxWidth="sm">
-        <DialogTitle sx={{ pr: 4 }}>
+        <DialogTitle sx={{ pr: 6, position: 'relative', textAlign: 'right' }}>
           עלינו
-          <IconButton aria-label="close" onClick={() => setShowAbout(false)} sx={{ position: 'absolute', right: 8, top: 8 }}>
+          <IconButton aria-label="close" onClick={() => setShowAbout(false)} sx={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)' }}>
             <CloseIcon />
           </IconButton>
         </DialogTitle>
@@ -850,9 +858,9 @@ export default function MainPage(): React.ReactElement {
 
       {/* Admin password Dialog */}
       <Dialog open={showAdminDialog} onClose={() => setShowAdminDialog(false)} fullWidth maxWidth="xs">
-        <DialogTitle sx={{ pr: 4 }}>
+        <DialogTitle sx={{ pr: 6, position: 'relative', textAlign: 'right' }}>
           כניסה לממשק מנהלת
-          <IconButton aria-label="close" onClick={() => setShowAdminDialog(false)} sx={{ position: 'absolute', right: 8, top: 8 }}>
+          <IconButton aria-label="close" onClick={() => setShowAdminDialog(false)} sx={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)' }}>
             <CloseIcon />
           </IconButton>
         </DialogTitle>
@@ -880,9 +888,9 @@ export default function MainPage(): React.ReactElement {
 
       {/* Register Dialog */}
       <Dialog open={showRegisterDialog} onClose={() => setShowRegisterDialog(false)} fullWidth maxWidth="sm">
-        <DialogTitle sx={{ pr: 4 }}>
+        <DialogTitle sx={{ pr: 6, position: 'relative', textAlign: 'right' }}>
           טופס הרשמה
-          <IconButton aria-label="close" onClick={() => setShowRegisterDialog(false)} sx={{ position: 'absolute', right: 8, top: 8 }}>
+          <IconButton aria-label="close" onClick={() => setShowRegisterDialog(false)} sx={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)' }}>
             <CloseIcon />
           </IconButton>
         </DialogTitle>
@@ -892,8 +900,8 @@ export default function MainPage(): React.ReactElement {
               fullWidth
               label="שם"
               value={regName}
-              onChange={(e) => updateRegField('name', e.target.value)}
-              onBlur={() => validateFieldOnBlur('name')}
+              onChange={(e)=> updateRegField('name', e.target.value)}
+              onBlur={(e)=> validateFieldOnBlur('name')}
               error={Boolean(regErrors.name)}
               helperText={regErrors.name || ''}
             />
@@ -927,7 +935,7 @@ export default function MainPage(): React.ReactElement {
               placeholder="xxxx xxxx xxxx xxxx"
               value={regCardNumber}
               onChange={(e) => updateRegField('cardNumber', e.target.value)}
-              onBlur={() => validateFieldOnBlur('cardNumber')}
+              onBlur={(e)=> validateFieldOnBlur('cardNumber')}
               error={Boolean(regErrors.cardNumber)}
               helperText={regErrors.cardNumber || ''}
             />

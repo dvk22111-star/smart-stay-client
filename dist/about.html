@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="he">
+<head>
+<meta charset="UTF-8">
+<title>אודות</title>
+
+<style>
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    direction: rtl;
+    background: linear-gradient(135deg, #e0f7ff, #b3e5fc);
+}
+
+/* קופסת התוכן */
+.container {
+    max-width: 800px;
+    margin: 60px auto;
+    background: white;
+    padding: 30px;
+    border-radius: 20px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+}
+
+/* כותרת */
+h1 {
+    text-align: center;
+    color: #0288d1;
+    margin-bottom: 20px;
+}
+
+/* טקסט */
+p {
+    font-size: 18px;
+    line-height: 1.8;
+    color: #333;
+}
+
+/* הדגשה */
+.highlight {
+    color: #0288d1;
+    font-weight: bold;
+}
+
+/* כפתור חזרה */
+button {
+    display: block;
+    margin: 30px auto 0;
+    background: #03a9f4;
+    color: white;
+    border: none;
+    padding: 12px 25px;
+    border-radius: 12px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+button:hover {
+    background: #0288d1;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+    <h1>אודותינו</h1>
+
+    <p>
+        המערכת שלנו פותחה כדי להפוך את חוויית הנופש לקלה, חכמה ומדויקת יותר,
+        תוך דגש על התאמה אישית מלאה לכל משתתפת.
+    </p>
+
+    <p>
+        אנו מלווים נופשות משלב ההרשמה ועד השיבוץ הסופי באמצעות מערכת חכמה
+        שמבצעת אופטימיזציה של העדפות, קבוצות וחדרים.
+    </p>
+
+    <p>
+        מאחורי המערכת עומדות המפיקות
+        <span class="highlight">רובינשטיין ופלדמן</span>,
+        הדואגות לכל נופשת ליחס אישי, חם ומכבד לאורך כל הדרך.
+    </p>
+
+    <p>
+        אנו מאמינות שנופש טוב הוא כזה שמרגיש מותאם אישית, נעים ומדויק לכל אחת.
+    </p>
+
+    <button onclick="if (window.opener) { window.close(); } else { history.back(); }">חזרה</button>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,21 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Run FastAPI - Service.api.main",
+      "type": "python",
+      "request": "launch",
+      "module": "uvicorn",
+      "args": [
+        "Service.api.main:app",
+        "--reload",
+        "--host",
+        "127.0.0.1",
+        "--port",
+        "8000"
+      ],
+      "cwd": "${workspaceFolder}",
+      "jinja": true
+    }
+  ]
+}
