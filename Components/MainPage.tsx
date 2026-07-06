@@ -347,18 +347,29 @@ const OffersFlow: React.FC<{ vacations: Vacation[]; onRegisterOpen?: (offer: Off
   return (
     <div>
       <div className="offers-grid">
-        {vacations.map((vacation) => {
+        {vacations.map((vacation, idx) => {
+          const idRaw = (vacation as any).VacationID ?? (vacation as any).vacationID ?? idx
+          const title = (vacation as any).Program ?? (vacation as any).destination ?? 'נופש'
+          const hotelId = (vacation as any).HotelID ?? null
+          const location = hotelId ? `מלון ${hotelId}` : (vacation as any).destination ?? 'ללא יעד'
+          const start = (vacation as any).StartV ?? (vacation as any).startDate ?? ''
+          const end = (vacation as any).EndV ?? (vacation as any).endDate ?? ''
+          const dateStr = start || end ? `${start} - ${end}` : 'תאריכים אינם זמינים'
+          const price = (vacation as any).BasicCost ?? (vacation as any).price ?? 0
+
           const offer: Offer = {
-            id: String(vacation.VacationID),
-            title: vacation.Program,
-            location: `Hotel ${vacation.HotelID}`,
-            date: `${vacation.StartV} - ${vacation.EndV}`,
-            description: `נופש: ${vacation.Program}`,
-            price: vacation.BasicCost,
+            id: String(idRaw),
+            title: title,
+            location: location,
+            date: dateStr,
+            description: `נופש: ${title}`,
+            price: price,
           }
 
+          const key = offer.id || `vac-${idx}`
+
           return (
-            <div className="w3-card-4 w3-dark-grey offer-card" key={offer.id}>
+            <div className="w3-card-4 w3-dark-grey offer-card" key={key}>
               <div className="w3-container w3-center">
                 <h3>{offer.title}</h3>
                 <p>תאריכים: <strong>{offer.date}</strong></p>

@@ -3,18 +3,16 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import Optional, List
 import uuid
+import logging
+
+# Enable logging to debug issues
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 app = FastAPI()
 
-# Enable CORS for React frontend
-origins = [
-    "http://localhost:5173",
-    "http://127.0.0.1:5173",
-    "http://localhost:5174",
-    "http://127.0.0.1:5174",
-    "http://localhost:3000",
-    "http://127.0.0.1:3000",
-]
+# Enable CORS for React frontend - allow all origins during development
+origins = ["*"]
 
 app.add_middleware(
     CORSMiddleware,
@@ -23,6 +21,17 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Add a fallback middleware to ensure CORS headers are present on every response
+@app.middleware("http")
+async def add_cors_headers(request, call_next):
+    response = await call_next(request)
+    response.headers["Access-Control-Allow-Origin"] = "*"
+    response.headers["Access-Control-Allow-Methods"] = "GET,POST,PUT,DELETE,OPTIONS"
+    response.headers["Access-Control-Allow-Headers"] = "*"
+    return response
+
+logger.info("✓ CORS middleware enabled for frontend connections")
 
 # Models
 class User(BaseModel):
@@ -75,7 +84,7 @@ class VacationInfo(BaseModel):
 users_db = {}
 sessions_db = {}
 
-# Sample vacations data
+# Sample vacations data - MATCHES TypeScript Model
 VACATIONS = [
     Vacation(vacationID=1, destination="אילת - נופש ים אדום", startDate="01-07-2026", endDate="05-07-2026", price=1950),
     Vacation(vacationID=2, destination="ים המלח - ספא וריפוי", startDate="08-07-2026", endDate="12-07-2026", price=2150),
@@ -110,6 +119,12 @@ OFFERS = [
 
 # Endpoints
 
+@app.get("/")
+async def root():
+    """Root endpoint"""
+    logger.info("✓ Root endpoint called")
+    return {"message": "Backend is running", "version": "1.0", "status": "ok"}
+
 @app.post("/auth/register", response_model=UserResponse)
 async def register(user: User):
     """Register a new user"""
@@ -119,12 +134,14 @@ async def register(user: User):
         "name": user.name,
         "email": user.email
     }
+    logger.info(f"✓ User registered: {user.name}")
     return UserResponse(id=user_id, name=user.name, email=user.email)
 
 @app.post("/itinerary/send")
 async def send_itinerary(payload: ItineraryPayload):
     """Send itinerary to user"""
     recipient = payload.email or "unknown@example.com"
+    logger.info(f"✓ Itinerary sent to {recipient}")
     return {
         "status": "success",
         "message": f"Itinerary sent to {recipient}",
@@ -141,6 +158,7 @@ async def chat_message(msg: ChatMessage):
     
     sessions_db[session_id] = msg.message
     
+    logger.info(f"✓ Chat message received in session {session_id}")
     return {
         "sessionId": session_id,
         "reply": reply
@@ -149,27 +167,42 @@ async def chat_message(msg: ChatMessage):
 @app.get("/vacations", response_model=List[Vacation])
 async def get_vacations():
     """Get all available vacations"""
+    logger.info(f"✓ Vacations endpoint called - returning {len(VACATIONS)} vacations")
     return VACATIONS
 
 @app.get("/offers", response_model=List[Offer])
 async def get_offers():
     """Get all vacation offers"""
+    logger.info(f"✓ Offers endpoint called - returning {len(OFFERS)} offers")
     return OFFERS
 
 @app.get("/vacation_info", response_model=VacationInfo)
 async def get_vacation_info():
     """Get vacation information"""
-    return VacationInfo(
+    info = VacationInfo(
         dates=["01-07-2026", "08-07-2026", "15-07-2026", "22-07-2026"],
         location="Israel",
         notes="Check out our amazing vacation packages for summer 2026!"
     )
+    logger.info("✓ Vacation info endpoint called")
+    return info
 
 @app.get("/health")
 async def health_check():
     """Health check endpoint"""
-    return {"status": "ok", "message": "Backend is running"}
+    logger.info("✓ Health check called")
+    return {"status": "ok", "message": "Backend is running on 127.0.0.1:8000"}
 
 if __name__ == "__main__":
     import uvicorn
+    logger.info("🚀 Starting FastAPI server on http://127.0.0.1:8000")
+    logger.info("📋 Endpoints available:")
+    logger.info("   GET  /vacations - Get all vacations")
+    logger.info("   GET  /offers - Get all offers")
+    logger.info("   GET  /vacation_info - Get vacation info")
+    logger.info("   GET  /health - Health check")
+    logger.info("   POST /auth/register - Register user")
+    logger.info("   POST /itinerary/send - Send itinerary")
+    logger.info("   POST /chat/message - Send chat message")
     uvicorn.run(app, host="127.0.0.1", port=8000)
+

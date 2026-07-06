@@ -26,26 +26,33 @@ async function fetchJson<T>(path: string, retries = 3): Promise<T> {
   for (let attempt = 1; attempt <= retries; attempt++) {
     for (const base of API_BASES) {
       try {
+        console.log(`[Fetch Attempt ${attempt}] Trying: ${base}${path}`)
         const res = await fetch(`${base}${path}`, {
           headers: { Accept: 'application/json' },
         })
 
         if (res.ok) {
+          console.log(`[Success] Got response from: ${base}${path}`)
           return (await res.json()) as T
         }
 
-        lastError = new Error(`HTTP ${res.status}`)
+        console.warn(`[Failed] HTTP ${res.status} from ${base}${path}`)
+        lastError = new Error(`HTTP ${res.status} from ${base}${path}`)
       } catch (error) {
+        console.error(`[Error] Failed to fetch from ${base}${path}:`, error)
         lastError = error
       }
     }
 
     if (attempt < retries) {
+      console.log(`[Retry] Waiting before retry ${attempt + 1}...`)
       await new Promise((resolve) => setTimeout(resolve, 500 * attempt))
     }
   }
 
-  throw lastError instanceof Error ? lastError : new Error('שגיאה בטעינת נתונים מהשרת')
+  const errorMsg = lastError instanceof Error ? lastError.message : 'שגיאה בטעינת נתונים מהשרת'
+  console.error('[Final Error]', errorMsg)
+  throw lastError instanceof Error ? lastError : new Error(errorMsg)
 }
 
 export async function list_offers(): Promise<Offer[]> {
