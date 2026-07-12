@@ -40,61 +40,84 @@ import { theme } from '../Style/mainS'
 import { isValidEmail, normalizeEmail } from './validation'
 
 const brochurePdfUrl = '/brochure.pdf'
+const rawApiUrl = (globalThis as typeof globalThis & { __APP_API_URL__?: string }).__APP_API_URL__ || ''
+const API_BASE_URLS = [
+  'http://127.0.0.1:8000',
+  'http://localhost:8000',
+  rawApiUrl.replace(/\/$/, ''),
+]
+
+async function fetchFromApi(path: string, options: RequestInit = {}) {
+  let lastError: unknown = null
+
+  for (const base of API_BASE_URLS) {
+    try {
+      const res = await fetch(`${base}${path}`, {
+        ...options,
+        headers: {
+          Accept: 'application/json',
+          ...(options.headers || {}),
+        },
+      })
+
+      if (res.ok) {
+        return res
+      }
+
+      lastError = new Error(`HTTP ${res.status}`)
+    } catch (error) {
+      lastError = error
+    }
+  }
+
+  throw lastError instanceof Error ? lastError : new Error('שגיאה בהתחברות לשרת')
+}
+
 // Brizza component not used in this file
 const navButtonSx = {
   mr: 1,
-  bgcolor: 'primary.main',
-  background: 'linear-gradient(135deg, #4FC3F7 0%, #2EBFF4 100%)',
-  color: 'white',
+  color: '#1e293b',
   textTransform: 'none',
-  borderRadius: 2,
-  boxShadow: '0 6px 18px rgba(79,195,247,0.18)',
+  borderRadius: 3,
+  border: '1px solid rgba(30,41,59,0.16)',
+  bgcolor: 'rgba(255,255,255,0.9)',
+  minWidth: 160,
+  boxShadow: '0 6px 18px rgba(15,23,42,0.08)',
   '&:hover': {
-    boxShadow: '0 8px 20px rgba(79,195,247,0.28)',
-    transform: 'translateY(-2px)',
-    background: 'linear-gradient(135deg, #59CFF9 0%, #39C0F6 100%)',
+    boxShadow: '0 8px 22px rgba(15,23,42,0.12)',
+    transform: 'translateY(-1px)',
+    bgcolor: 'rgba(244,247,255,0.95)',
   },
 }
 
 const primaryButtonSx = {
-  background: 'linear-gradient(135deg, #4FC3F7 0%, #2EBFF4 100%)',
-  color: 'white',
-  '&:hover': { background: 'linear-gradient(135deg, #59CFF9 0%, #39C0F6 100%)' },
+  color: '#1e293b',
+  textTransform: 'none',
+  borderRadius: 3,
+  border: '1px solid rgba(30,41,59,0.16)',
+  bgcolor: 'rgba(255,255,255,0.9)',
+  '&:hover': { bgcolor: 'rgba(244,247,255,1)' },
 }
 
-const ADMIN_PASSWORD = 'manager123'
 
-type Registrant = {
-  id: string
-  name: string
-  email: string
-  phone: string
-  paid: string
-  publication: string
-  offer: string
+
+type AdminUser = {
+  UserID: number
+  Name: string
+  Email?: string | null
+  Phone?: string | null
+  Credit?: number | null
 }
 
 type Placement = {
-  id: string
-  participant: string
-  room: string
-  date: string
-  notes: string
+  PlacementID: number
+  RoomID: number
+  VacationersCustomersID: number
+  Price: number
 }
 
-const MOCK_REGISTRATIONS: Registrant[] = [
-  { id: '1', name: 'ציפי כהן', email: 'tzippi@example.com', phone: '052-9991112', paid: '₪1,750', publication: 'פייסבוק', offer: 'נופש באילת' },
-  { id: '2', name: 'רונית לוי', email: 'ronit@example.com', phone: '050-1234567', paid: '₪1,850', publication: 'אינסטגרם', offer: 'נופש בים המלח' },
-  { id: '3', name: 'שרית ברק', email: 'sarit@example.com', phone: '054-7654321', paid: '₪1,950', publication: 'מייל', offer: 'נופש בחיפה' },
-]
 
-const MOCK_PLACEMENTS: Placement[] = [
-  { id: 'p1', participant: 'ציפי כהן', room: 'חדר 101', date: '12-15 ביולי', notes: 'עדיפות חלון' },
-  { id: 'p2', participant: 'רונית לוי', room: 'חדר 202', date: '13-16 ביולי', notes: 'קבוצה A' },
-  { id: 'p3', participant: 'שרית ברק', room: 'חדר 303', date: '12-14 ביולי', notes: 'מבוקש חדר זוגי' },
-]
- 
-type ActiveFlow = 'login' | 'sendItinerary' | 'info' | 'offers' | 'groupOffers' | null
+type ActiveFlow = 'login' | 'sendItinerary' | 'info' | 'offers' | 'groupOffers' | 'bot' | null
 
 type User = { id?: string | number | null; name: string | null; email: string | null }
 
@@ -104,7 +127,9 @@ interface LoginFlowProps {
   user: User
 }
 const LoginFlow: React.FC<LoginFlowProps> = ({ onRegister, onLogout, user }) => {
-  const [mode, setMode] = useState<'login' | 'register' | 'join'>('login')
+ type Mode = 'login' | 'register' | 'join'
+
+const [mode, setMode] = useState<Mode>('login')
   const [name, setName] = useState<string>('')
   const [email, setEmail] = useState<string>('')
   const [groupCode, setGroupCode] = useState<string>('')
@@ -165,7 +190,7 @@ const LoginFlow: React.FC<LoginFlowProps> = ({ onRegister, onLogout, user }) => 
     
     <Paper sx={{ p: 2 }}>
       <Typography variant="h6" gutterBottom>
-          רישום / כניסה      ת
+        רישום / כניסה
       </Typography>
       <Stack direction="row" spacing={1} sx={{ mb: 2 }}>
         <Button variant={mode === 'login' ? 'contained' : 'outlined'} onClick={() => setMode('login')}>
@@ -257,17 +282,10 @@ const SendItineraryFlow: React.FC<SendItineraryFlowProps> = ({ user, onRequireEm
    )
  }
  
-const MOCK_VACATION_INFO: VacationInfo = {
-  dates: ['10/07/2026', '16/07/2026'],
-  location: 'מלון הדגמה בראשון לציון',
-  notes: 'זהו מידע לדוגמה המוצג כאשר השרת לא זמין.',
-}
-
 const InfoFlow: React.FC = () => {
   const [info, setInfo] = useState<VacationInfo | null>(null)
   const [loading, setLoading] = useState<boolean>(true)
   const [error, setError] = useState<string | null>(null)
-  const [showMockWarning, setShowMockWarning] = useState<boolean>(false)
 
   useEffect(() => {
     let mounted = true
@@ -276,10 +294,11 @@ const InfoFlow: React.FC = () => {
         const res = await get_vacation_info()
         if (!mounted) return
         setInfo(res)
+        setError(null)
       } catch (e) {
         if (!mounted) return
-        setInfo(MOCK_VACATION_INFO)
-        setShowMockWarning(true)
+        setInfo(null)
+        setError('לא הצלחנו לטעון את הנתונים מהשרת של הפייתון. בדוק שהשרת רץ על 127.0.0.1:8000.')
       } finally {
         if (!mounted) return
         setLoading(false)
@@ -314,19 +333,14 @@ const InfoFlow: React.FC = () => {
   return (
     <Paper sx={{ p: 2 }}>
       <Typography variant="h6">מידע על הנופש</Typography>
-      {showMockWarning && (
-        <Typography color="warning.main" sx={{ mb: 1 }}>
-          השרת לא זמין כרגע, מוצג מידע דוגמה.
-        </Typography>
-      )}
-      <Typography>תאריכים: {info?.dates?.join(' - ')}</Typography>
+      <Typography>תאריכים: {info?.dates?.join(' - ') || 'לא זמין'}</Typography>
       <Typography>מיקום: {info?.location || 'לא זמין'}</Typography>
       {info?.notes && <Typography>{info.notes}</Typography>}
     </Paper>
   )
 }
 
-const OffersFlow: React.FC<{ vacations: Vacation[]; onRegisterOpen?: (offer: Offer) => void }> = ({ vacations, onRegisterOpen }) => {
+const OffersFlow: React.FC<{ vacations: Vacation[]; onRegisterOpen?: (offer: Offer, vacation: Vacation) => void }> = ({ vacations, onRegisterOpen }) => {
   const [openBrochureUrl, setOpenBrochureUrl] = useState<string | null>(null)
 
   const openBrochure = () => {
@@ -370,7 +384,7 @@ const OffersFlow: React.FC<{ vacations: Vacation[]; onRegisterOpen?: (offer: Off
                   <Button size="small" variant="contained" className="w3-button w3-green" onClick={openBrochure}>
                     לצפיה בתוכניה
                   </Button>
-                  <Button size="small" variant="contained" className="w3-button w3-light-blue" onClick={() => onRegisterOpen && onRegisterOpen(offer)}>
+                  <Button size="small" variant="contained" className="w3-button w3-light-blue" onClick={() => onRegisterOpen && onRegisterOpen(offer, vacation)}>
                     לרישום לנופש
                   </Button>
                 </div>
@@ -421,6 +435,7 @@ export default function MainPage(): React.ReactElement {
   const [vacationsLoading, setVacationsLoading] = useState<boolean>(true)
   const [vacationsError, setVacationsError] = useState<string | null>(null)
   const [registerOffer, setRegisterOffer] = useState<Offer | null>(null)
+  const [registerVacation, setRegisterVacation] = useState<Vacation | null>(null)
   const [showRegisterDialog, setShowRegisterDialog] = useState(false)
   const [registerError, setRegisterError] = useState<string | null>(null)
   const [regName, setRegName] = useState<string>('')
@@ -432,13 +447,19 @@ export default function MainPage(): React.ReactElement {
   const [regIdentity, setRegIdentity] = useState<string>('')
   const [regErrors, setRegErrors] = useState<Record<string, string>>({})
   const [showAdminDialog, setShowAdminDialog] = useState(false)
+  const [showBotDialog, setShowBotDialog] = useState(false)
+  const [botSessionId, setBotSessionId] = useState<string | null>(null)
+  const [botMessages, setBotMessages] = useState<{ role: 'user' | 'bot'; text: string }[]>([])
+  const [botInput, setBotInput] = useState('')
+  const [botLoading, setBotLoading] = useState(false)
   const [adminPassword, setAdminPassword] = useState<string>('')
   const [adminError, setAdminError] = useState<string | null>(null)
   const [isAdmin, setIsAdmin] = useState(false)
   const [adminPage, setAdminPage] = useState<'welcome' | 'registrants' | 'placements' | 'delete'>('welcome')
-  const [registrations, setRegistrations] = useState<Registrant[]>(MOCK_REGISTRATIONS)
-  const [placements, setPlacements] = useState<Placement[]>(MOCK_PLACEMENTS)
-
+  const [registrations, setRegistrations] = useState<AdminUser[]>([])
+  const [selectedDeleteRegistration, setSelectedDeleteRegistration] = useState<string>('')
+  // const [placements, setPlacements] = useState<Placement[]>(MOCK_PLACEMENTS)
+  const [placements, setPlacements] = useState<Placement[]>([])
   useEffect(() => {
     let mounted = true
     const loadVacations = async () => {
@@ -467,12 +488,44 @@ export default function MainPage(): React.ReactElement {
       mounted = false
     }
   }, [])
- 
+async function deleteUser(userId: number | string) {
+  if (!userId) return
+
+  const id = Number(userId)
+  if (Number.isNaN(id)) {
+    console.error('Invalid user id for delete:', userId)
+    alert('שגיאה במחיקה: מזהה משתמש לא תקין')
+    return
+  }
+
+  try {
+    const res = await adminFetch(`/users/${id}`, {
+      method: 'DELETE',
+    })
+
+    if (!res.ok) {
+      const text = await res.text()
+      throw new Error(`Delete failed: ${text}`)
+    }
+
+    setRegistrations((prev) => prev.filter((r) => r.UserID !== id))
+    setSelectedDeleteRegistration('')
+    alert('המשתמש נמחק בהצלחה')
+  } catch (err) {
+    console.error(err)
+    alert('שגיאה במחיקה')
+  }
+}
+
+  function handleOpenAbout(): void {
+    setShowAbout(true)
+  }
+
   async function handleRegister(name: string, email: string): Promise<void> {
     try {
       const payload: any = { name }
       if (email) payload.email = email
-      const res = await fetch('http://127.0.0.1:8000/auth/register', {
+      const res = await fetchFromApi('/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
@@ -486,7 +539,59 @@ export default function MainPage(): React.ReactElement {
       alert('לא ניתן להשלים רישום — בדוק שהשרת רץ')
     }
   }
+  async function handleAdminLogin() {
+  try {
+    const res = await fetchFromApi('/admin/login', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        username: 'admin',
+        password: adminPassword,
+      }),
+    })
 
+    if (!res.ok) {
+      const errorText = await res.text()
+  console.log("SERVER ERROR:", errorText)
+      throw new Error('Login failed')
+    }
+
+    const data = await res.json()
+
+    localStorage.setItem(
+      'admin_token',
+      data.access_token
+    )
+
+
+    setAdminError(null)
+    setIsAdmin(true)
+    await loadAdminUsers()
+    await loadPlacements()
+    setShowAdminDialog(false)
+    setAdminPassword('')
+    setAdminPage('welcome')
+
+  } catch (error) {
+    console.error(error)
+    setAdminError('סיסמת מנהלת לא נכונה')
+  }
+}
+async function loadPlacements() {
+  const token = localStorage.getItem("admin_token")
+
+  const res = await adminFetch("/placement")
+
+  if (!res.ok) {
+    throw new Error("Failed")
+  }
+
+  const data = await res.json()
+
+  setPlacements(data)
+}
   function handleLogout(): void {
     setUser({ name: null, email: null })
     alert('התנתקת')
@@ -496,8 +601,57 @@ export default function MainPage(): React.ReactElement {
     alert('התוכניה נשלחה ל: ' + mail)
   }
 
-  function handleOpenRegister(offer: Offer) {
+  async function startBotChat() {
+    try {
+      setBotLoading(true)
+      setBotMessages([])
+      const sessionId = typeof crypto !== 'undefined' && 'randomUUID' in crypto ? crypto.randomUUID() : `session-${Date.now()}`
+      const res = await fetchFromApi('/chat/message', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sessionId, message: 'start' })
+      })
+      if (!res.ok) throw new Error('שגיאה בהתחלת שיחה עם השרת')
+      const data = await res.json()
+      setBotSessionId(data.sessionId)
+      setBotMessages([{ role: 'bot', text: data.reply || 'שלום! איך אוכל לעזור?' }])
+      setShowBotDialog(true)
+      setActiveFlow('bot')
+    } catch (err) {
+      console.error(err)
+      alert('לא הצלחנו להתחבר לשרת הבוט. וודא שהשרת ב-8000 פועל ושהקישור נכון.')
+    } finally {
+      setBotLoading(false)
+    }
+  }
+
+  async function sendBotMessage() {
+    if (!botInput.trim() || botSessionId === null) return
+    const msg = botInput.trim()
+    setBotInput('')
+    setBotMessages(prev => [...prev, { role: 'user', text: msg }])
+    setBotLoading(true)
+    try {
+      const res = await fetchFromApi('/chat/message', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sessionId: botSessionId, message: msg })
+      })
+      if (!res.ok) throw new Error('שגיאה בשליחת תשובה לשרת')
+      const data = await res.json()
+      const botReply = data.reply || 'תשובת השרת התקבלה בהצלחה.'
+      setBotMessages(prev => [...prev, { role: 'bot', text: botReply }])
+    } catch (err) {
+      console.error(err)
+      setBotMessages(prev => [...prev, { role: 'bot', text: 'אירעה שגיאה בשליחת ההודעה. נסה שנית.' }])
+    } finally {
+      setBotLoading(false)
+    }
+  }
+
+  function handleOpenRegister(offer: Offer, vacation: Vacation) {
     setRegisterOffer(offer)
+    setRegisterVacation(vacation)
     setRegName(user.name || '')
     setRegEmail(user.email || '')
     setRegPhone('')
@@ -561,6 +715,16 @@ export default function MainPage(): React.ReactElement {
     setRegErrors(errors)
     return !Object.values(errors).some((error) => error)
   }
+  async function loadAdminUsers() {
+    const res = await adminFetch('/admin/users')
+
+    if (!res.ok) {
+      throw new Error('Failed to load users')
+    }
+
+    const data = await res.json()
+    setRegistrations(data)
+  }
 
   function updateRegField(field: string, value: string): void {
     switch (field) {
@@ -623,26 +787,69 @@ export default function MainPage(): React.ReactElement {
 
     try {
       setRegisterError(null)
-      const payload: any = {
-        userId: user?.id,
-        email: normalizeEmail(data.email || ''),
-        phone: data.phone,
-        offerId: registerOffer?.id,
-        cardNumber: data.cardNumber,
-        cardExpiry: data.cardExpiry,
-        cardCvv: data.cardCvv,
-        identity: data.identity,
-      }
-      // Do NOT send raw card data to demo endpoint; in production use secure PCI flow
-      const res = await fetch('http://127.0.0.1:8000/itinerary/send', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      })
-      if (!res.ok) throw new Error('שגיאה בשליחת הרשמה')
-      const reply = await res.json()
-      console.log('itinerary reply', reply)
-      alert('הרשמתך נקלטה. סטטוס: ' + (reply.status || 'OK'))
+     // בדיקה אם המשתמש כבר קיים לפי טלפון
+let userId: number
+
+try {
+  const existingUserRes = await fetchFromApi(
+    `/users/phone/${encodeURIComponent(data.phone ?? '')}`
+  )
+
+  const existingUser = await existingUserRes.json()
+  userId = existingUser.UserID
+} catch {
+  // המשתמש לא קיים - יוצרים אותו
+  const userPayload = {
+    Name: data.name,
+    Phone: data.phone ?? '',
+    Email: normalizeEmail(data.email),
+    Credit: 0,
+  }
+console.log('Creating user', userPayload)
+  const createUserRes = await fetchFromApi('/users/', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(userPayload),
+  })
+
+  if (!createUserRes.ok) {
+    throw new Error('יצירת משתמש נכשלה')
+  }
+
+  const createdUser = await createUserRes.json()
+  userId = createdUser.UserID
+}
+
+// יצירת הרשמה לחופשה
+const registrationPayload = {
+  UserID: userId,
+  VacationID: registerVacation!.VacationID,
+  UpdateDate: new Date().toISOString().split('T')[0],
+  GroupMemberNumber: null,
+}
+console.log('Registering vacation', registrationPayload)
+const registrationRes = await fetchFromApi('/vacationers-customers/', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify(registrationPayload),
+})
+
+if (!registrationRes.ok) {
+  throw new Error('שגיאה בהרשמה לחופשה')
+}
+
+const reply = await registrationRes.json()
+console.log(reply)
+     
+      alert(
+        'הרשמתך לנופש ' +
+          (registerVacation?.Program || 'הנופש') +
+          ' תוקלטה בהצלחה. תאריכים: ' +
+          (registerVacation?.StartV || '-') +
+          ' - ' +
+          (registerVacation?.EndV || '-') +
+          '. אנו בקשר בקרוב!'
+      )
       setShowRegisterDialog(false)
     } catch (e) {
       console.error(e)
@@ -667,41 +874,57 @@ export default function MainPage(): React.ReactElement {
          <div className="left" style={{ background: 'transparent', borderRadius: 8, padding: 16 }}>
            {activeFlow === null && null}
           {isAdmin ? (
-            <Box sx={{ textAlign: 'center', py: 6 }}>
+          <Box
+  sx={{
+    textAlign: 'center',
+    py: 6,
+    px: 4,
+    backgroundColor: '#E3F2FD',
+    borderRadius: 3,
+    minHeight: '80vh',
+    boxShadow: 3,
+  }}
+>
               <Typography variant="h4" sx={{ mb: 2, color: 'white', textShadow: '0 2px 6px rgba(0,0,0,0.6)' }}>מנהלת יקרה שלום וברכה</Typography>
-              <Stack direction="row" spacing={2} justifyContent="center" sx={{ mt: 3 }}>
-                <Button variant="contained" onClick={() => setAdminPage('registrants')}>הצג נרשמות</Button>
-                <Button variant="contained" onClick={() => setAdminPage('placements')}>טבלת שיבוצים</Button>
-                <Button variant="contained" color="error" onClick={() => setAdminPage('delete')}>מחק נרשם</Button>
-                <Button variant="outlined" onClick={() => { setIsAdmin(false); setAdminPage('welcome') }}>יציאה מממשק מנהלת</Button>
+              <Stack direction="row" spacing={2} justifyContent="center" sx={{ mt: 3, flexWrap: 'wrap' }}>
+                <Button variant="outlined" onClick={() => setAdminPage('registrants')} sx={{ minWidth: 150, borderRadius: 3 }}>
+                  הצג נרשמות
+                </Button>
+                <Button variant="outlined" onClick={() => setAdminPage('placements')} sx={{ minWidth: 150, borderRadius: 3 }}>
+                  טבלת שיבוצים
+                </Button>
+                <Button variant="outlined" color="error" onClick={() => setAdminPage('delete')} sx={{ minWidth: 150, borderRadius: 3 }}>
+                  מחק נרשם
+                </Button>
+                <Button variant="outlined" onClick={() => { setIsAdmin(false); setAdminPage('welcome') }} sx={{ minWidth: 150, borderRadius: 3 }}>
+                  יציאה מממשק מנהלת
+                </Button>
               </Stack>
 
               <Box sx={{ mt: 4 }}>
                 {adminPage === 'registrants' && (
-                  <TableContainer component={Paper} sx={{ maxHeight: 400 }}>
+                  <TableContainer component={Paper} sx={{ maxHeight: 500 }}>
                     <Table size="small" stickyHeader>
                       <TableHead>
                         <TableRow>
                           <TableCell>שם</TableCell>
                           <TableCell>טלפון</TableCell>
                           <TableCell>דוא"ל</TableCell>
-                          <TableCell>כמה שילמה</TableCell>
-                          <TableCell>פרסום</TableCell>
-                          <TableCell>הצעה</TableCell>
+                          <TableCell>זיכוי</TableCell>
                           <TableCell>פעולות</TableCell>
                         </TableRow>
                       </TableHead>
                       <TableBody>
                         {registrations.map((r) => (
-                          <TableRow key={r.id}>
-                            <TableCell>{r.name}</TableCell>
-                            <TableCell>{r.phone}</TableCell>
-                            <TableCell>{r.email}</TableCell>
-                            <TableCell>{r.paid}</TableCell>
-                            <TableCell>{r.publication}</TableCell>
-                            <TableCell>{r.offer}</TableCell>
+                          <TableRow key={r.UserID}>
+                            <TableCell>{r.Name}</TableCell>
+                            <TableCell>{r.Phone || '-'}</TableCell>
+                            <TableCell>{r.Email || '-'}</TableCell>
+                            <TableCell>{r.Credit != null ? r.Credit : '-'}</TableCell>
                             <TableCell>
-                              <Button size="small" color="error" onClick={() => setRegistrations((prev) => prev.filter((x) => x.id !== r.id))}>מחק</Button>
+                              <Button size="small" color="error" onClick={() => deleteUser(r.UserID)}>
+                                מחק
+                              </Button>
                             </TableCell>
                           </TableRow>
                         ))}
@@ -714,35 +937,58 @@ export default function MainPage(): React.ReactElement {
                   <TableContainer component={Paper} sx={{ maxHeight: 400 }}>
                     <Table size="small" stickyHeader>
                       <TableHead>
-                        <TableRow>
-                          <TableCell>משתתפת</TableCell>
-                          <TableCell>חדר</TableCell>
-                          <TableCell>תאריכים</TableCell>
-                          <TableCell>הערות</TableCell>
-                        </TableRow>
-                      </TableHead>
-                      <TableBody>
-                        {placements.map((p) => (
-                          <TableRow key={p.id}>
-                            <TableCell>{p.participant}</TableCell>
-                            <TableCell>{p.room}</TableCell>
-                            <TableCell>{p.date}</TableCell>
-                            <TableCell>{p.notes}</TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
+  <TableRow>
+    <TableCell>PlacementID</TableCell>
+    <TableCell>RoomID</TableCell>
+    <TableCell>VacationersCustomersID</TableCell>
+    <TableCell>Price</TableCell>
+  </TableRow>
+</TableHead>
+                     <TableBody>
+  {placements.map((p) => (
+    <TableRow key={p.PlacementID}>
+      <TableCell>{p.PlacementID}</TableCell>
+      <TableCell>{p.RoomID}</TableCell>
+      <TableCell>{p.VacationersCustomersID}</TableCell>
+      <TableCell>{p.Price}</TableCell>
+    </TableRow>
+  ))}
+</TableBody>
                     </Table>
                   </TableContainer>
                 )}
 
                 {adminPage === 'delete' && (
-                  <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center', alignItems: 'center' }}>
-                    <TextField select value="" SelectProps={{ native: true }} label="בחר נרשמת למחיקה" sx={{ minWidth: 260 }} onChange={(e) => setRegistrations((prev) => prev.filter((x) => x.id !== e.target.value))}>
+                  <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center', alignItems: 'center', flexWrap: 'wrap' }}>
+                    <TextField
+                      select
+                      value={selectedDeleteRegistration}
+                      SelectProps={{ native: true }}
+                      label="בחר נרשמת למחיקה"
+                      sx={{ minWidth: 260 }}
+                      onChange={(e) => {
+                        setSelectedDeleteRegistration(e.target.value)
+                      }}
+                    >
                       <option value="">-- בחרי --</option>
                       {registrations.map((r) => (
-                        <option key={r.id} value={r.id}>{r.name} | {r.phone}</option>
+                        <option key={r.UserID} value={String(r.UserID)}>
+                          {r.Name} | {r.Phone || r.Email || 'אין פרטי קשר'}
+                        </option>
                       ))}
                     </TextField>
+                    <Button
+                      variant="contained"
+                      color="error"
+                      disabled={!selectedDeleteRegistration}
+                      onClick={() => {
+                        if (selectedDeleteRegistration) {
+                          deleteUser(selectedDeleteRegistration)
+                        }
+                      }}
+                    >
+                      מחק נרשמת
+                    </Button>
                   </Box>
                 )}
               </Box>
@@ -751,7 +997,9 @@ export default function MainPage(): React.ReactElement {
             <div className="btn-group" style={{ display: 'flex', flexWrap: 'wrap', gap: 0, width: '100%', alignItems: 'center', marginTop: 4, justifyContent: 'flex-start', paddingLeft: 24 }}>
               <Button className="button" startIcon={<LoginIcon />} sx={{ ...navButtonSx as any, padding: '8px 12px', fontSize: 12 }} onClick={() => setShowLogin(true)}>כניסה / רישום</Button>
               <Button className="button" startIcon={<LocalOfferIcon />} sx={{ ...navButtonSx as any, padding: '8px 12px', fontSize: 12 }} onClick={() => setShowVacations(true)}>הנופשים שלנו</Button>
-              <Button className="button" startIcon={<InfoIcon />} sx={{ ...navButtonSx as any, padding: '8px 12px', fontSize: 12 }} onClick={() => window.open('/about.html', '_blank')}>עלינו</Button>
+              <Button className="button" startIcon={<InfoIcon />} sx={{ ...navButtonSx as any, padding: '10px 16px', fontSize: 13, minWidth: 160 }} onClick={handleOpenAbout}>
+                עלינו
+              </Button>
               <Button startIcon={
                     <svg viewBox="0 0 120 120" width="24" height="24" xmlns="http://www.w3.org/2000/svg">
                       <rect x="20" y="34" width="80" height="58" rx="16" fill="#edf4ff" stroke="#2196f3" strokeWidth="5"/>
@@ -764,7 +1012,7 @@ export default function MainPage(): React.ReactElement {
                       <rect x="48" y="86" width="24" height="24" rx="6" fill="#4fc3f7"/>
                       <path d="M38 100h44" stroke="#1976d2" strokeWidth="5" strokeLinecap="round"/>
                     </svg>
-                  } className="button" sx={{ ...navButtonSx as any, padding: '8px 12px', fontSize: 12 }} onClick={() => setActiveFlow('login')}>שיחה עם הבוט</Button>
+                  } className="button" sx={{ ...navButtonSx as any, padding: '8px 12px', fontSize: 12 }} onClick={startBotChat}>שיחה עם הבוט</Button>
               <Button className="button" startIcon={<InfoIcon />} sx={{ ...navButtonSx as any, padding: '8px 12px', fontSize: 12, ml: 1 }} onClick={() => setShowAdminDialog(true)}>
                 תפריט ניהול
               </Button>
@@ -778,7 +1026,7 @@ export default function MainPage(): React.ReactElement {
           {activeFlow === 'sendItinerary' && <SendItineraryFlow user={user} onRequireEmail={(mail) => handleRequireEmail(mail)} />}
  
            {activeFlow === 'info' && <InfoFlow />}
-           {activeFlow === 'offers' && <OffersFlow vacations={vacations} onRegisterOpen={(o) => handleOpenRegister(o)} />}
+           {activeFlow === 'offers' && <OffersFlow vacations={vacations} onRegisterOpen={(offer, vacation) => handleOpenRegister(offer, vacation)} />}
            {/* {activeFlow === 'groupOffers' && <GroupOffersFlow />}
   */}
            <div style={{ marginTop: 24, position: 'fixed', bottom: 12, left: 12, fontSize: 12, color: '#666', lineHeight: 1.2 }}>
@@ -791,6 +1039,44 @@ export default function MainPage(): React.ReactElement {
      </div>
 
       {/* Login Dialog */}
+      <Dialog open={showBotDialog} onClose={() => setShowBotDialog(false)} fullWidth maxWidth="sm">
+        <DialogTitle sx={{ pr: 6, position: 'relative', textAlign: 'right' }}>
+          צ'אט עם הבוט
+          <IconButton aria-label="close" onClick={() => setShowBotDialog(false)} sx={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)' }}>
+            <CloseIcon />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent dividers>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, minHeight: 320, maxHeight: 420 }}>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, overflowY: 'auto', pr: 1, flex: 1 }}>
+              {botMessages.map((m, i) => (
+                <Box key={i} sx={{ alignSelf: m.role === 'user' ? 'flex-end' : 'flex-start', bgcolor: m.role === 'user' ? '#bbdefb' : '#f5f5f5', color: '#000', px: 2, py: 1.25, borderRadius: 3, maxWidth: '82%', boxShadow: '0 1px 4px rgba(0,0,0,0.08)' }}>
+                  {m.text}
+                </Box>
+              ))}
+              {botLoading && <CircularProgress size={20} sx={{ alignSelf: 'center', mt: 1 }} />}
+            </Box>
+          </Box>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2, pt: 1, display: 'flex', gap: 1, alignItems: 'center' }}>
+          <TextField
+            fullWidth
+            label="הקלד/י הודעה"
+            value={botInput}
+            onChange={(e) => setBotInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault()
+                sendBotMessage()
+              }
+            }}
+          />
+          <Button onClick={sendBotMessage} variant="contained" disabled={botLoading || !botInput.trim()}>
+            שלח
+          </Button>
+        </DialogActions>
+      </Dialog>
+
       <Dialog open={showLogin} onClose={() => setShowLogin(false)} fullWidth maxWidth="sm">
         <DialogTitle sx={{ pr: 6, position: 'relative', textAlign: 'right' }}>
           כניסה / רישום
@@ -833,7 +1119,7 @@ export default function MainPage(): React.ReactElement {
               <Typography color="text.secondary">אין נתוני נופש זמינים כרגע.</Typography>
             )}
           </Box>
-          <OffersFlow vacations={vacations} onRegisterOpen={(o) => handleOpenRegister(o)} />
+          <OffersFlow vacations={vacations} onRegisterOpen={(offer, vacation) => handleOpenRegister(offer, vacation)} />
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setShowVacations(false)}>סגור</Button>
@@ -872,17 +1158,12 @@ export default function MainPage(): React.ReactElement {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setShowAdminDialog(false)}>בטל</Button>
-          <Button variant="contained" onClick={() => {
-            if (adminPassword === ADMIN_PASSWORD) {
-              setAdminError(null)
-              setIsAdmin(true)
-              setShowAdminDialog(false)
-              setAdminPassword('')
-              setAdminPage('welcome')
-            } else {
-              setAdminError('סיסמה לא נכונה')
-            }
-          }}>כניסה</Button>
+    <Button
+  variant="contained"
+  onClick={handleAdminLogin}
+>
+  כניסה
+</Button>
         </DialogActions>
       </Dialog>
 
@@ -1004,4 +1285,19 @@ export default function MainPage(): React.ReactElement {
       </Dialog>
     </ThemeProvider>
   )
+
+}
+async function adminFetch(url: string, options: RequestInit = {}) {
+  const token = localStorage.getItem('admin_token')
+  const headers = new Headers(options.headers || {})
+
+  headers.set('Content-Type', 'application/json')
+  if (token) {
+    headers.set('Authorization', `Bearer ${token}`)
+  }
+
+  return fetchFromApi(url, {
+    ...options,
+    headers,
+  })
 }
