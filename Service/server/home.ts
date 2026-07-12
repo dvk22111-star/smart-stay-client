@@ -21,22 +21,31 @@ export interface VacationInfo {
 const API_BASES = ['http://127.0.0.1:8000', 'http://localhost:8000']
 
 async function fetchJson<T>(path: string, retries = 3): Promise<T> {
+  const normalizedPath = path.startsWith('/') ? path : `/${path}`
+  const candidatePaths = normalizedPath.endsWith('/')
+    ? [normalizedPath, normalizedPath.replace(/\/+$/, '') || '/']
+    : [normalizedPath, `${normalizedPath}/`]
+
   let lastError: unknown = null
 
   for (let attempt = 1; attempt <= retries; attempt++) {
     for (const base of API_BASES) {
-      try {
-        const res = await fetch(`${base}${path}`, {
-          headers: { Accept: 'application/json' },
-        })
+      if (!base) continue
 
-        if (res.ok) {
-          return (await res.json()) as T
+      for (const candidatePath of candidatePaths) {
+        try {
+          const res = await fetch(`${base}${candidatePath}`, {
+            headers: { Accept: 'application/json' },
+          })
+
+          if (res.ok) {
+            return (await res.json()) as T
+          }
+
+          lastError = new Error(`HTTP ${res.status}`)
+        } catch (error) {
+          lastError = error
         }
-
-        lastError = new Error(`HTTP ${res.status}`)
-      } catch (error) {
-        lastError = error
       }
     }
 
@@ -57,5 +66,5 @@ export async function get_vacation_info(): Promise<VacationInfo> {
 }
 
 export async function getVacations(): Promise<Vacation[]> {
-  return fetchJson<Vacation[]>('/vacations')
+  return fetchJson<Vacation[]>('/vacations/')
 }

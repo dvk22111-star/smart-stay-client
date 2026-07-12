@@ -91,12 +91,57 @@ const navButtonSx = {
 }
 
 const primaryButtonSx = {
-  color: '#1e293b',
+  color: '#0f172a',
   textTransform: 'none',
-  borderRadius: 3,
-  border: '1px solid rgba(30,41,59,0.16)',
-  bgcolor: 'rgba(255,255,255,0.9)',
-  '&:hover': { bgcolor: 'rgba(244,247,255,1)' },
+  borderRadius: 999,
+  border: '1px solid rgba(59,130,246,0.18)',
+  bgcolor: '#ffffff',
+  px: 2.5,
+  py: 1.1,
+  fontWeight: 700,
+  boxShadow: '0 12px 28px rgba(37,99,235,0.14)',
+  '&:hover': {
+    bgcolor: '#eff6ff',
+    boxShadow: '0 16px 34px rgba(37,99,235,0.2)',
+    transform: 'translateY(-1px)',
+  },
+}
+
+const heroButtonSx = {
+  minWidth: 190,
+  borderRadius: 999,
+  px: 2.6,
+  py: 1.35,
+  fontSize: 15,
+  fontWeight: 700,
+  textTransform: 'none',
+  boxShadow: '0 16px 34px rgba(15,23,42,0.12)',
+  transition: 'all 0.22s ease',
+  '&:hover': {
+    transform: 'translateY(-2px)',
+    boxShadow: '0 20px 42px rgba(15,23,42,0.16)',
+  },
+}
+
+const secondaryHeroButtonSx = {
+  ...heroButtonSx,
+  color: '#0f172a',
+  bgcolor: 'rgba(255,255,255,0.88)',
+  border: '1px solid rgba(148,163,184,0.28)',
+  '&:hover': {
+    ...heroButtonSx['&:hover'],
+    bgcolor: '#ffffff',
+  },
+}
+
+const accentHeroButtonSx = {
+  ...heroButtonSx,
+  color: '#ffffff',
+  background: 'linear-gradient(135deg, #2563eb 0%, #7c3aed 100%)',
+  '&:hover': {
+    ...heroButtonSx['&:hover'],
+    background: 'linear-gradient(135deg, #1d4ed8 0%, #6d28d9 100%)',
+  },
 }
 
 
@@ -271,15 +316,19 @@ const SendItineraryFlow: React.FC<SendItineraryFlowProps> = ({ user, onRequireEm
     }
    }
  
-   return (
-     <div className="panel">
-       <h3>שליחת תוכניה</h3>
-       <p>לחצי לשליחת התוכניה. אם את רשומה - תשלח אוטומטית, אחרת תתבקשו להכניס דואר.</p>
-      <div style={{ marginTop: 8 }}>
-        <Button variant="contained" sx={primaryButtonSx} onClick={send}>שלח תוכניה</Button>
-      </div>
-     </div>
-   )
+  return (
+    <Box className="panel">
+      <Typography variant="h6">שליחת תוכניה</Typography>
+      <Typography>
+        לחצי לשליחת התוכניה. אם את רשומה - תשלח אוטומטית, אחרת תתבקשו להכניס דואר.
+      </Typography>
+      <Box style={{ marginTop: 8 }}>
+        <Button variant="contained" sx={primaryButtonSx} onClick={send}>
+          שלח תוכניה
+        </Button>
+      </Box>
+    </Box>
+  )
  }
  
 const InfoFlow: React.FC = () => {
@@ -359,9 +408,9 @@ const OffersFlow: React.FC<{ vacations: Vacation[]; onRegisterOpen?: (offer: Off
   )
 
   return (
-    <div>
-      <div className="offers-grid">
-        {vacations.map((vacation) => {
+    <Box>
+      <Box className="offers-grid">
+        {vacations.map((vacation: Vacation) => {
           const offer: Offer = {
             id: String(vacation.VacationID),
             title: vacation.Program,
@@ -372,27 +421,27 @@ const OffersFlow: React.FC<{ vacations: Vacation[]; onRegisterOpen?: (offer: Off
           }
 
           return (
-            <div className="w3-card-4 w3-dark-grey offer-card" key={offer.id}>
-              <div className="w3-container w3-center">
-                <h3>{offer.title}</h3>
-                <p>תאריכים: <strong>{offer.date}</strong></p>
-                <p>יעד: <strong>{offer.location}</strong></p>
-                <p>מספר חדרים: <strong>{vacation.NumberOfRooms}</strong></p>
-                <p>קומות: <strong>{vacation.NumberOfFloors}</strong></p>
-                <p>מחיר: <strong>₪{offer.price}</strong></p>
-                <div className="offer-actions">
-                  <Button size="small" variant="contained" className="w3-button w3-green" onClick={openBrochure}>
-                    לצפיה בתוכניה
-                  </Button>
-                  <Button size="small" variant="contained" className="w3-button w3-light-blue" onClick={() => onRegisterOpen && onRegisterOpen(offer, vacation)}>
-                    לרישום לנופש
-                  </Button>
-                </div>
-              </div>
-            </div>
+            <Card key={offer.id} sx={{ borderRadius: 4, boxShadow: '0 16px 40px rgba(15,23,42,0.12)' }}>
+              <CardContent sx={{ textAlign: 'center' }}>
+                <Typography variant="h6" sx={{ fontWeight: 800 }}>{offer.title}</Typography>
+                <Typography>תאריכים: <strong>{offer.date}</strong></Typography>
+                <Typography>יעד: <strong>{offer.location}</strong></Typography>
+                <Typography>מספר חדרים: <strong>{vacation.NumberOfRooms}</strong></Typography>
+                <Typography>קומות: <strong>{vacation.NumberOfFloors}</strong></Typography>
+                <Typography>מחיר: <strong>₪{offer.price}</strong></Typography>
+              </CardContent>
+              <CardActions sx={{ justifyContent: 'center', pb: 2, gap: 1, flexWrap: 'wrap' }}>
+                <Button size="small" variant="contained" onClick={openBrochure}>
+                  לצפיה בתוכניה
+                </Button>
+                <Button size="small" variant="contained" onClick={() => onRegisterOpen && onRegisterOpen(offer, vacation)}>
+                  לרישום לנופש
+                </Button>
+              </CardActions>
+            </Card>
           )
         })}
-      </div>
+      </Box>
       <Dialog open={Boolean(openBrochureUrl)} onClose={closeBrochure} fullWidth maxWidth="lg">
         <DialogTitle sx={{ pr: 6, position: 'relative', textAlign: 'right' }}>
           תוכניה
@@ -413,7 +462,7 @@ const OffersFlow: React.FC<{ vacations: Vacation[]; onRegisterOpen?: (offer: Off
           <Button onClick={closeBrochure}>סגור</Button>
         </DialogActions>
       </Dialog>
-    </div>
+    </Box>
   )
 }
  
@@ -448,10 +497,11 @@ export default function MainPage(): React.ReactElement {
   const [regErrors, setRegErrors] = useState<Record<string, string>>({})
   const [showAdminDialog, setShowAdminDialog] = useState(false)
   const [showBotDialog, setShowBotDialog] = useState(false)
-  const [botSessionId, setBotSessionId] = useState<string | null>(null)
+  const [botSessionId, setBotSessionId] = useState<number | null>(null)
   const [botMessages, setBotMessages] = useState<{ role: 'user' | 'bot'; text: string }[]>([])
   const [botInput, setBotInput] = useState('')
   const [botLoading, setBotLoading] = useState(false)
+  const [botQuestionId, setBotQuestionId] = useState<string | null>(null)
   const [adminPassword, setAdminPassword] = useState<string>('')
   const [adminError, setAdminError] = useState<string | null>(null)
   const [isAdmin, setIsAdmin] = useState(false)
@@ -460,6 +510,15 @@ export default function MainPage(): React.ReactElement {
   const [selectedDeleteRegistration, setSelectedDeleteRegistration] = useState<string>('')
   // const [placements, setPlacements] = useState<Placement[]>(MOCK_PLACEMENTS)
   const [placements, setPlacements] = useState<Placement[]>([])
+
+  function handleOpenRegister(offer: Offer, vacation: Vacation): void {
+    setRegisterOffer(offer)
+    setRegisterVacation(vacation)
+    setRegisterError(null)
+    setRegErrors({})
+    setShowRegisterDialog(true)
+  }
+
   useEffect(() => {
     let mounted = true
     const loadVacations = async () => {
@@ -605,16 +664,39 @@ async function loadPlacements() {
     try {
       setBotLoading(true)
       setBotMessages([])
-      const sessionId = typeof crypto !== 'undefined' && 'randomUUID' in crypto ? crypto.randomUUID() : `session-${Date.now()}`
-      const res = await fetchFromApi('/chat/message', {
+      setBotQuestionId(null)
+
+      const sessionRes = await fetchFromApi('/bot/sessions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sessionId, message: 'start' })
+        body: JSON.stringify({
+          Phone: '0500000000',
+          VacationID: null,
+          GroupID: null,
+        })
       })
-      if (!res.ok) throw new Error('שגיאה בהתחלת שיחה עם השרת')
-      const data = await res.json()
-      setBotSessionId(data.sessionId)
-      setBotMessages([{ role: 'bot', text: data.reply || 'שלום! איך אוכל לעזור?' }])
+
+      if (!sessionRes.ok) throw new Error('שגיאה ביצירת סשן בוט')
+      const sessionData = await sessionRes.json()
+      const sessionId = sessionData.SessionID
+      setBotSessionId(sessionId)
+
+      const verifyRes = await fetchFromApi(`/bot/sessions/${sessionId}/verify-phone`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      })
+
+      if (!verifyRes.ok) throw new Error('שגיאה באתחול שיחת הבוט')
+      const verifyData = await verifyRes.json()
+      const nextQuestion = verifyData?.next_question || null
+      const nextQuestionId = nextQuestion?.id || null
+      const initialMessage =
+        verifyData?.message ||
+        nextQuestion?.text ||
+        'שלום! איך אוכל לעזור?'
+
+      setBotQuestionId(nextQuestionId)
+      setBotMessages([{ role: 'bot', text: initialMessage }])
       setShowBotDialog(true)
       setActiveFlow('bot')
     } catch (err) {
@@ -628,51 +710,56 @@ async function loadPlacements() {
   async function sendBotMessage() {
     if (!botInput.trim() || botSessionId === null) return
     const msg = botInput.trim()
+    const currentQuestionId = botQuestionId
+
     setBotInput('')
     setBotMessages(prev => [...prev, { role: 'user', text: msg }])
     setBotLoading(true)
+
     try {
-      const res = await fetchFromApi('/chat/message', {
+      const res = await fetchFromApi(`/bot/sessions/${botSessionId}/answers`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sessionId: botSessionId, message: msg })
+        body: JSON.stringify({
+          QuestionID: currentQuestionId,
+          AnswerText: msg,
+          IsFinal: false,
+        })
       })
+
       if (!res.ok) throw new Error('שגיאה בשליחת תשובה לשרת')
       const data = await res.json()
-      const botReply = data.reply || 'תשובת השרת התקבלה בהצלחה.'
-      setBotMessages(prev => [...prev, { role: 'bot', text: botReply }])
+
+      const responseParts = [
+        data?.message,
+        data?.next_question?.text,
+      ].filter((part): part is string => Boolean(part && String(part).trim()))
+      const responseMessage =
+        responseParts.length > 0
+          ? responseParts.join('\n\n')
+          : 'התקבלה תשובה מהשרת.'
+
+      setBotMessages((prev) => [...prev, { role: 'bot', text: responseMessage }])
+      setBotQuestionId(data?.next_question?.id || null)
     } catch (err) {
       console.error(err)
-      setBotMessages(prev => [...prev, { role: 'bot', text: 'אירעה שגיאה בשליחת ההודעה. נסה שנית.' }])
+      setBotMessages((prev) => [
+        ...prev,
+        { role: 'bot', text: 'אירעה שגיאה בשליחת ההודעה. נסה שוב.' }
+      ])
     } finally {
       setBotLoading(false)
     }
   }
 
-  function handleOpenRegister(offer: Offer, vacation: Vacation) {
-    setRegisterOffer(offer)
-    setRegisterVacation(vacation)
-    setRegName(user.name || '')
-    setRegEmail(user.email || '')
-    setRegPhone('')
-    setRegCardNumber('')
-    setRegCardExpiry('')
-    setRegCardCvv('')
-    setRegIdentity('')
-    setRegErrors({})
-    setRegisterError(null)
-    setShowRegisterDialog(true)
-  }
-
   function validateField(field: string, value: string): string | null {
     const trimmed = value.trim()
+
     switch (field) {
       case 'name':
-        return trimmed ? null : 'אנא הזן שם מלא'
-      case 'email': {
-        const normalized = normalizeEmail(value || '')
-        return normalized && isValidEmail(normalized) ? null : 'אנא הזן דוא"ל תקין'
-      }
+        return trimmed.length >= 2 ? null : 'אנא הזן שם מלא'
+      case 'email':
+        return /\S+@\S+\.\S+/.test(trimmed) ? null : 'אנא הזן כתובת מייל תקינה'
       case 'phone': {
         const digits = value.replace(/\D/g, '')
         return digits.length >= 7 ? null : 'אנא הזן מספר טלפון תקין'
@@ -994,34 +1081,157 @@ console.log(reply)
               </Box>
             </Box>
           ) : (
-            <div className="btn-group" style={{ display: 'flex', flexWrap: 'wrap', gap: 0, width: '100%', alignItems: 'center', marginTop: 4, justifyContent: 'flex-start', paddingLeft: 24 }}>
-              <Button className="button" startIcon={<LoginIcon />} sx={{ ...navButtonSx as any, padding: '8px 12px', fontSize: 12 }} onClick={() => setShowLogin(true)}>כניסה / רישום</Button>
-              <Button className="button" startIcon={<LocalOfferIcon />} sx={{ ...navButtonSx as any, padding: '8px 12px', fontSize: 12 }} onClick={() => setShowVacations(true)}>הנופשים שלנו</Button>
-              <Button className="button" startIcon={<InfoIcon />} sx={{ ...navButtonSx as any, padding: '10px 16px', fontSize: 13, minWidth: 160 }} onClick={handleOpenAbout}>
-                עלינו
-              </Button>
-              <Button startIcon={
-                    <svg viewBox="0 0 120 120" width="24" height="24" xmlns="http://www.w3.org/2000/svg">
-                      <rect x="20" y="34" width="80" height="58" rx="16" fill="#edf4ff" stroke="#2196f3" strokeWidth="5"/>
-                      <rect x="34" y="18" width="52" height="28" rx="12" fill="#2196f3"/>
-                      <circle cx="40" cy="58" r="8" fill="#fff"/>
-                      <circle cx="80" cy="58" r="8" fill="#fff"/>
-                      <rect x="36" y="76" width="48" height="8" rx="4" fill="#2196f3"/>
-                      <path d="M30 44c4-6 8-8 14-8s10 2 14 8" stroke="#1976d2" strokeWidth="4" fill="none" strokeLinecap="round"/>
-                      <path d="M89 40c0-7-4-12-11-12H42c-7 0-11 5-11 12" stroke="#1976d2" strokeWidth="5" fill="none"/>
-                      <rect x="48" y="86" width="24" height="24" rx="6" fill="#4fc3f7"/>
-                      <path d="M38 100h44" stroke="#1976d2" strokeWidth="5" strokeLinecap="round"/>
-                    </svg>
-                  } className="button" sx={{ ...navButtonSx as any, padding: '8px 12px', fontSize: 12 }} onClick={startBotChat}>שיחה עם הבוט</Button>
-              <Button className="button" startIcon={<InfoIcon />} sx={{ ...navButtonSx as any, padding: '8px 12px', fontSize: 12, ml: 1 }} onClick={() => setShowAdminDialog(true)}>
-                תפריט ניהול
-              </Button>
-              {user.name && (
-                <Button className="button" variant="outlined" color="secondary" onClick={handleLogout} startIcon={<LogoutIcon />} sx={{ padding: '8px 12px', fontSize: 12 }}>
-                  התנתק/י
-                </Button>
-              )}
-            </div>
+            <Box
+              className="home-hero"
+              sx={{
+                width: '100%',
+                maxWidth: 1080,
+                mx: 'auto',
+                mt: { xs: 2, md: 3 },
+                px: { xs: 1, md: 2 },
+              }}
+            >
+              <Box
+                sx={{
+                  position: 'relative',
+                  overflow: 'hidden',
+                  borderRadius: 6,
+                  px: { xs: 2.5, md: 5 },
+                  py: { xs: 4, md: 6 },
+                  background: 'linear-gradient(135deg, rgba(255,255,255,0.96) 0%, rgba(239,246,255,0.97) 45%, rgba(245,243,255,0.98) 100%)',
+                  border: '1px solid rgba(148,163,184,0.18)',
+                  boxShadow: '0 26px 80px rgba(15,23,42,0.12)',
+                }}
+              >
+                <Box
+                  sx={{
+                    position: 'absolute',
+                    top: -70,
+                    left: -50,
+                    width: 220,
+                    height: 220,
+                    borderRadius: '50%',
+                    background: 'radial-gradient(circle, rgba(59,130,246,0.18) 0%, rgba(59,130,246,0) 72%)',
+                    pointerEvents: 'none',
+                  }}
+                />
+                <Box
+                  sx={{
+                    position: 'absolute',
+                    bottom: -90,
+                    right: -60,
+                    width: 260,
+                    height: 260,
+                    borderRadius: '50%',
+                    background: 'radial-gradient(circle, rgba(124,58,237,0.18) 0%, rgba(124,58,237,0) 72%)',
+                    pointerEvents: 'none',
+                  }}
+                />
+                <Stack spacing={2.5} sx={{ position: 'relative', zIndex: 1 }}>
+                  <Box
+                    sx={{
+                      display: 'inline-flex',
+                      alignSelf: 'flex-start',
+                      px: 1.5,
+                      py: 0.7,
+                      borderRadius: 999,
+                      bgcolor: 'rgba(37,99,235,0.1)',
+                      color: '#1d4ed8',
+                      fontWeight: 700,
+                      fontSize: 13,
+                    }}
+                  >
+                    Smart Stay · חוויית נופש חכמה ונעימה
+                  </Box>
+                  <Stack
+                    direction={{ xs: 'column', sm: 'row' }}
+                    spacing={1.5}
+                    flexWrap="wrap"
+                    useFlexGap
+                    sx={{ pt: 1 }}
+                  >
+                    <Button
+                      startIcon={<LocalOfferIcon />}
+                      sx={accentHeroButtonSx}
+                      onClick={() => setShowVacations(true)}
+                    >
+                      לצפייה בנופשים
+                    </Button>
+                    <Button
+                      startIcon={<LoginIcon />}
+                      sx={secondaryHeroButtonSx}
+                      onClick={() => setShowLogin(true)}
+                    >
+                      כניסה / רישום
+                    </Button>
+                    <Button
+                      startIcon={<InfoIcon />}
+                      sx={secondaryHeroButtonSx}
+                      onClick={handleOpenAbout}
+                    >
+                      מידע עלינו
+                    </Button>
+                  </Stack>
+                  <Stack
+                    direction={{ xs: 'column', md: 'row' }}
+                    spacing={1.25}
+                    flexWrap="wrap"
+                    useFlexGap
+                    sx={{ pt: 1 }}
+                  >
+                    <Button
+                      startIcon={
+                        <svg viewBox="0 0 120 120" width="24" height="24" xmlns="http://www.w3.org/2000/svg">
+                          <rect x="20" y="34" width="80" height="58" rx="16" fill="#edf4ff" stroke="#2196f3" strokeWidth="5"/>
+                          <rect x="34" y="18" width="52" height="28" rx="12" fill="#2196f3"/>
+                          <circle cx="40" cy="58" r="8" fill="#fff"/>
+                          <circle cx="80" cy="58" r="8" fill="#fff"/>
+                          <rect x="36" y="76" width="48" height="8" rx="4" fill="#2196f3"/>
+                          <path d="M30 44c4-6 8-8 14-8s10 2 14 8" stroke="#1976d2" strokeWidth="4" fill="none" strokeLinecap="round"/>
+                          <path d="M89 40c0-7-4-12-11-12H42c-7 0-11 5-11 12" stroke="#1976d2" strokeWidth="5" fill="none"/>
+                          <rect x="48" y="86" width="24" height="24" rx="6" fill="#4fc3f7"/>
+                          <path d="M38 100h44" stroke="#1976d2" strokeWidth="5" strokeLinecap="round"/>
+                        </svg>
+                      }
+                      sx={{
+                        ...primaryButtonSx,
+                        alignSelf: 'flex-start',
+                      }}
+                      onClick={startBotChat}
+                    >
+                      שיחה עם הבוט
+                    </Button>
+                    <Button
+                      startIcon={<InfoIcon />}
+                      sx={{
+                        ...primaryButtonSx,
+                        alignSelf: 'flex-start',
+                      }}
+                      onClick={() => setShowAdminDialog(true)}
+                    >
+                      תפריט ניהול
+                    </Button>
+                    {user.name && (
+                      <Button
+                        variant="outlined"
+                        color="secondary"
+                        onClick={handleLogout}
+                        startIcon={<LogoutIcon />}
+                        sx={{
+                          borderRadius: 999,
+                          px: 2.4,
+                          py: 1.1,
+                          textTransform: 'none',
+                          fontWeight: 700,
+                        }}
+                      >
+                        התנתק/י
+                      </Button>
+                    )}
+                  </Stack>
+                </Stack>
+              </Box>
+            </Box>
           )}
           {activeFlow === 'sendItinerary' && <SendItineraryFlow user={user} onRequireEmail={(mail) => handleRequireEmail(mail)} />}
  
